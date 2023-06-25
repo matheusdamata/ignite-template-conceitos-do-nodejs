@@ -16,7 +16,7 @@ function checksExistsUserAccount(req, res, next) {
 
   const user = users.find(user => user.username === username)
 
-  if (!user) return res.status(400).json({
+  if (!user) return res.status(404).json({
     error: 'User not exists!'
   })
 
@@ -32,9 +32,7 @@ function checksExistsTodo(req, res, next) {
   const todo = user.todos.find(todo => todo.id === id)
 
   if (!todo) {
-    return res.status(400).json({
-      error: 'Todo not exists!'
-    })
+    return res.status(404).json({ error: 'Todo not found' })
   }
   
   req.todo = todo
@@ -45,6 +43,12 @@ function checksExistsTodo(req, res, next) {
 app.post('/users', (req, res) => {
   // Complete aqui
   const { name, username } = req.body
+
+  const userAlreadyExists = users.some(user => user.username === username)
+
+  if (userAlreadyExists) return res.status(400).json({
+    error: 'User already exists!'
+  })
 
   const user = {
     id: uuidv4(),
@@ -69,7 +73,7 @@ app.post('/todos', checksExistsUserAccount, (req, res) => {
   const { user } = req
   const { title, deadline } = req.body
 
-  user.todos.push({
+  const todo = user.todos.push({
     id: uuidv4(),
     title,
     done: false,
@@ -77,27 +81,36 @@ app.post('/todos', checksExistsUserAccount, (req, res) => {
     created_at: new Date()
   })
 
-  return res.status(201).send()
+  return res.status(201).json(todo)
 });
 
 app.put('/todos/:id', checksExistsUserAccount, checksExistsTodo, (req, res) => {
   // Complete aqui
   const { todo } = req
   const { title, deadline } = req.body
-
   
   todo.title = title
-  todo.deadline = deadline
+  todo.deadline = new Date(deadline)
 
   return res.status(201).send()
 });
 
-app.patch('/todos/:id/done', checksExistsUserAccount, (req, res) => {
+app.patch('/todos/:id/done', checksExistsUserAccount, checksExistsTodo, (req, res) => {
   // Complete aqui
+  const { todo } = req
+
+  todo.done = !todo.done
+
+  return res.status(201).send()
 });
 
-app.delete('/todos/:id', checksExistsUserAccount, (req, res) => {
+app.delete('/todos/:id', checksExistsUserAccount, checksExistsTodo, (req, res) => {
   // Complete aqui
+  const { user, todo } = req
+
+  user.todos.splice(user.todos.indexOf(todo), 1)
+  
+  return res.status(204).json()
 });
 
 module.exports = app;
