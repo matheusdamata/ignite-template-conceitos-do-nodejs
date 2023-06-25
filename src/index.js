@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
@@ -13,12 +12,9 @@ const users = [];
 function checksExistsUserAccount(req, res, next) {
   // Complete aqui
   const { username } = req.headers
-
   const user = users.find(user => user.username === username)
 
-  if (!user) return res.status(404).json({
-    error: 'User not exists!'
-  })
+  if (!user) return res.status(404).json({error: 'User not exists!'})
 
   req.user = user
 
@@ -30,10 +26,8 @@ function checksExistsTodo(req, res, next) {
   const { user } = req
 
   const todo = user.todos.find(todo => todo.id === id)
-
-  if (!todo) {
-    return res.status(404).json({ error: 'Todo not found' })
-  }
+  
+  if (!todo) return res.status(404).json({ error: 'Todo not found' })
   
   req.todo = todo
 
@@ -54,7 +48,7 @@ app.post('/users', (req, res) => {
     id: uuidv4(),
     name,
     username,
-    todos: []
+    todos: [],
   }
 
   users.push(user)
@@ -65,7 +59,7 @@ app.post('/users', (req, res) => {
 app.get('/todos', checksExistsUserAccount, (req, res) => {
   // Complete aqui
   const { user } = req
-  return res.json(user.todos)
+  return res.status(201).json(user.todos);
 });
 
 app.post('/todos', checksExistsUserAccount, (req, res) => {
@@ -73,13 +67,15 @@ app.post('/todos', checksExistsUserAccount, (req, res) => {
   const { user } = req
   const { title, deadline } = req.body
 
-  const todo = user.todos.push({
+  const todo = {
     id: uuidv4(),
     title,
     done: false,
     deadline: new Date(deadline),
     created_at: new Date()
-  })
+  }
+
+  user.todos.push(todo)
 
   return res.status(201).json(todo)
 });
@@ -92,16 +88,16 @@ app.put('/todos/:id', checksExistsUserAccount, checksExistsTodo, (req, res) => {
   todo.title = title
   todo.deadline = new Date(deadline)
 
-  return res.status(201).send()
+  return res.status(200).json(todo)
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, checksExistsTodo, (req, res) => {
   // Complete aqui
   const { todo } = req
 
-  todo.done = !todo.done
+  todo.done = true
 
-  return res.status(201).send()
+  return res.status(200).json(todo)
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, checksExistsTodo, (req, res) => {
